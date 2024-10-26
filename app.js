@@ -54,6 +54,32 @@ app.get('/api/customer', (req, res) => {
     });
 })
 
+app.get('/api/customer/:cid', (req, res) => {
+    const customerId = req.params.cid;
+
+    db.query(
+        'SELECT * FROM customers WHERE CID = ?',
+        [customerId],
+        (error, results) => {
+            if (error) {
+                console.log(results)
+                console.error('Error fetching customer:', error);
+                return res.status(500).json({
+                    error: 'Internal server error'
+                });
+            }
+
+            if (results.length === 0) {
+                return res.status(404).json({
+                    error: 'Customer not found'
+                });
+            }
+
+            res.json(results[0]);
+        }
+    );
+});
+
 app.post('/api/vegetable/add', (req, res) => {
     const { VegetableName, Price } = req.body;
     const sql = 'INSERT INTO Vegetables (VegetableName, Price) VALUES (?, ?)';
@@ -115,6 +141,84 @@ app.post('/api/customer/add', (req, res) => {
                     res.status(201).json({
                         message: 'Customer created successfully',
                         customerId: newCID
+                    });
+                }
+            );
+        }
+    );
+});
+
+app.put('/api/customer/update/:cid', (req, res) => {
+    const customerId = req.params.cid;
+    const {
+        CompanyName,
+        FirstName,
+        LastName,
+        Email,
+        ContactNumber,
+        Address,
+        City,
+        Postcode,
+        State,
+        Country
+    } = req.body;
+
+    // First check if customer exists
+    db.query(
+        'SELECT * FROM customers WHERE CID = ?',
+        [customerId],
+        (error, results) => {
+            if (error) {
+                console.error('Error checking customer:', error);
+                return res.status(500).json({
+                    error: 'Internal server error'
+                });
+            }
+
+            if (results.length === 0) {
+                return res.status(404).json({
+                    error: 'Customer not found'
+                });
+            }
+
+            // Update customer record
+            db.query(
+                `UPDATE customers 
+         SET CompanyName = ?, 
+             FirstName = ?, 
+             LastName = ?, 
+             Email = ?, 
+             ContactNumber = ?, 
+             Address = ?, 
+             City = ?, 
+             Postcode = ?, 
+             State = ?, 
+             Country = ?
+         WHERE CID = ?`,
+                [
+                    CompanyName,
+                    FirstName,
+                    LastName,
+                    Email,
+                    ContactNumber,
+                    Address,
+                    City,
+                    Postcode,
+                    State,
+                    Country,
+                    customerId
+                ],
+                (error, result) => {
+                    if (error) {
+                        console.error('Error updating customer:', error);
+                        return res.status(500).json({
+                            error: 'Internal server error'
+                        });
+                    }
+
+                    res.json({
+                        message: 'Customer updated successfully',
+                        customerId: customerId
                     });
                 }
             );
